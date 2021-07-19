@@ -13,9 +13,13 @@ The Synchronous 3D mesh SLAM package
 
 https://glad.dav1d.de/
 
-配置自己的gl版本，一般是4.6.0。下载压缩包。
+配置自己的gl版本，可以通过
+```
+    glxinfo | grep "OpenGL"
+```
+查看，高于3.3。下载压缩包。
 
-glad和KHR文件夹复制到/usr/local/include/目录下，并添加glad.c文件到稍后的工程中。
+glad和KHR文件夹复制到/usr/local/include/目录下，并添加glad.c文件到稍后的工程中。我这里把glad.c也放到/usr/local/include/glad/下面了。
 
 - glm
 ```
