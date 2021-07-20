@@ -20,11 +20,11 @@ target_link_libraries(opengl_test
     glfw dl
 )
 
-add_executable(cubes apps/cubes.cc
+add_executable(read apps/read.cc
     /usr/local/include/glad/glad.c
 )
 
-target_link_libraries(cubes
+target_link_libraries(read
     ${OPENGL_LIBRARY}
     glfw dl
 )

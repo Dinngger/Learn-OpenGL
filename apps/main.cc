@@ -1,14 +1,14 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <iostream>
+#include <chrono>
 #include "Shader.hpp"
 #include "Mesh.hpp"
-
-#include <iostream>
-#include <cmath>
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
@@ -17,12 +17,29 @@ void processInput(GLFWwindow *window);
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
+void CalculateFrameRate(GLFWwindow* window)
+{
+    static float framesPerSecond = 0.0f;
+    static auto lastTime = std::chrono::system_clock::now();
+    auto currentTime = std::chrono::system_clock::now();    
+    ++framesPerSecond;
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(currentTime - lastTime);
+    double durationf = static_cast<double>(duration.count()) / 1000000.0;
+    if (durationf > 1.0f) {
+       lastTime = currentTime;
+       char strFrameRate[200];
+       sprintf(strFrameRate, "LearnOpenGL %dFPS", int(framesPerSecond));
+       glfwSetWindowTitle(window, strFrameRate);
+       framesPerSecond = 0;
+    }
+}
+
 int main()
 {
     // glfw: initialize and configure
     // ------------------------------
     glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
@@ -46,14 +63,38 @@ int main()
         return -1;
     }
 
-    // build and compile our shader program
-    // ------------------------------------
-    Shader ourShader("../shader.vs", "../shader.fs"); // you can name your shader files however you like
-    Mesh mesh;
-    if (mesh.loadFile("../m2.txt") < 0)
-        return 0;
+    // configure global opengl state
+    // -----------------------------
+    glEnable(GL_DEPTH_TEST);
 
-    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    // build and compile our shader zprogram
+    // ------------------------------------
+    Shader ourShader("../shaders/shader.vert", "../shaders/shader.frag");
+    Mesh mesh;
+    if (mesh.loadFile("../datas/cubes.obj") < 0)
+        return 0;
+    // world space positions of our cubes
+    glm::vec3 cubePositions[] = {
+        glm::vec3( 0.0f,  0.0f,  0.0f),
+        glm::vec3( 2.0f,  5.0f, -15.0f),
+        glm::vec3(-1.5f, -2.2f, -2.5f),
+        glm::vec3(-3.8f, -2.0f, -12.3f),
+        glm::vec3 (2.4f, -0.4f, -3.5f),
+        glm::vec3(-1.7f,  3.0f, -7.5f),
+        glm::vec3( 1.3f, -2.0f, -2.5f),
+        glm::vec3( 1.5f,  2.0f, -2.5f),
+        glm::vec3( 1.5f,  0.2f, -1.5f),
+        glm::vec3(-1.3f,  1.0f, -1.5f)
+    };
+    // tell opengl for each sampler to which texture unit it belongs to (only has to be done once)
+    // -------------------------------------------------------------------------------------------
+    ourShader.use();
+
+    // pass projection matrix to shader (as projection matrix rarely changes there's no need to do this per frame)
+    // -----------------------------------------------------------------------------------------------------------
+    glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+    ourShader.setMat4("projection", projection); 
+
     // render loop
     // -----------
     while (!glfwWindowShouldClose(window))
@@ -61,21 +102,37 @@ int main()
         // input
         // -----
         processInput(window);
+        CalculateFrameRate(window);
 
         // render
         // ------
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        // activate shader
         ourShader.use();
 
-        // 更新uniform颜色
-        // float timeValue = glfwGetTime();
-        // float alphaValue = std::sin(timeValue) / 2.0f + 0.5f;
-        // ourShader.setFloat("ourColor", alphaValue);
+        // camera/view transformation
+        glm::mat4 view = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
+        float radius = 10.0f;
+        float camX   = sin(glfwGetTime()) * radius;
+        float camZ   = cos(glfwGetTime()) * radius;
+        view = glm::lookAt(glm::vec3(camX, 0.0f, camZ), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        ourShader.setMat4("view", view);
 
-        // render the triangle
+        // render boxes
         mesh.draw();
+        for (unsigned int i = 0; i < 10; i++)
+        {
+            // calculate the model matrix for each object and pass it to shader before drawing
+            glm::mat4 model = glm::mat4(1.0f);
+            model = glm::translate(model, cubePositions[i]);
+            float angle = 20.0f * i;
+            model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+            ourShader.setMat4("model", model);
+
+            mesh.draw();
+        }
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
@@ -86,7 +143,6 @@ int main()
     // optional: de-allocate all resources once they've outlived their purpose:
     // ------------------------------------------------------------------------
     mesh.deleteBuffer();
-    // glDeleteProgram(sharder);
 
     // glfw: terminate, clearing all previously allocated GLFW resources.
     // ------------------------------------------------------------------
