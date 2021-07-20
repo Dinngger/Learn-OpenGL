@@ -30,7 +30,7 @@ glad和KHR文件夹复制到/usr/local/include/目录下，并添加glad.c文件
 1. Shader languages support for VS Code：VSCode下的shader代码高亮显示的插件。
 2. GLSL Linter：用来做代码错误检查的工具。安装完插件之后还需要配置Validator path
 
-    在github上下载release版本压缩包, 设置路径到bin下面的文件.
+glslangVlidator: 在github上下载release版本压缩包, 设置路径到bin下面的文件.
 3. 配置代码提示：在VSCode下点击User Snippets输入glsl，之后在打开的glsl.json文件下输入[网址](https://link.zhihu.com/?target=https%3A//github.com/mdyshad0w/glslsnippets)中的内容
 
 ## learn opengl

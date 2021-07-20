@@ -7,11 +7,11 @@ set(CMAKE_C_FLAGS "-std=c99")
 project(opengl_test)
 
 find_package(OpenGL REQUIRED)
-include_directories(. ${OpenGL_INCLUDE_DIR})
+include_directories(include ${OpenGL_INCLUDE_DIR})
 
 find_package(glfw3 REQUIRED)
 
-add_executable(opengl_test main.cc
+add_executable(opengl_test apps/main.cc
     /usr/local/include/glad/glad.c
 )
 
@@ -20,7 +20,7 @@ target_link_libraries(opengl_test
     glfw dl
 )
 
-add_executable(cubes cubes.cc
+add_executable(cubes apps/cubes.cc
     /usr/local/include/glad/glad.c
 )
 
